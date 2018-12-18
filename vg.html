@@ -95,6 +95,8 @@ function getParameterMap () {
 function getParam(s) {
 	if (s=='i')
 		return qstrs.i || 1
+	if (s=='id')
+		return qstrs.id || ""
 	return ''
 }
 
@@ -463,12 +465,23 @@ function rearrange(a) {
 function drawMain(error, args) {
 	d3.select("#loading").style("display", "none")
 	var fig = d3.select("#figures")
-	var names = args[0], json = args[1], info = args[2], edges = args[3]
-	var nodes=[], node=[], edge=[], old=''
+	var json = args[1], info = args[2], edges = args[3]
+	var names=[], jnames=[], nodes=[], node=[], edge=[], old=''
 	// Remove the old subnetworks
 	fig.selectAll("div").remove()
   d3.select("#htop").text(getParam("id"))
-
+	// Cluster names
+	for(var i in args[0]) {
+		names[args[0][i].id] = args[0][i].name
+	}
+	// Node names
+	for(var i in json.path) {
+		var jname = json.path[i].name
+		for(var j in json.path[i].mapping) {
+			jnames[json.path[i].mapping[j].position.node_id] = names[jname]
+		}
+	}
+	// Node attributes
 	for(var i in info) {
 		nodes[info[i].id] = {"name":info[i].id, "seq":info[i].seq}
 	}
@@ -476,7 +489,8 @@ function drawMain(error, args) {
 	for(var i in edges) {
 		if (old!='' && old!=edges[i].id) {
 		div = fig.append("div")
-    div.append("span").text(old).style("margin-right", "5px")
+		// The first ID and further IDs either are belong to the same cluster or undefined
+    div.append("span").text(jnames[edge[0].source]).style("margin-right", "5px")
 
 		var g = fig.append("div").attr("id", "subnetwork"+old)
 					.attr("class", "subnetwork k" + node.length);
